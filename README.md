@@ -42,7 +42,16 @@ $cmake ..
 $make
 $make install
 
+Prerequisite:
+As it's not enough to time to make mock on etcd, it requires to install etcd before run gtest or example on default port 2379
 How to run example
 1. install etcd first
 2. cd build/src/etcd/example
 3. ./example
+
+How to run gtest
+1. mkdir build
+2. cmake -Dtest=ON ..
+3. make
+4. make test
+5. or: ./runTest
