@@ -105,36 +105,44 @@ TEST_F(ClientTest, KeepAlive) {
   EXPECT_EQ(exist_value, get_value);
 }
 
-TEST_F(ClientTest, WatchGuard) {
+TEST_F(ClientTest, WatchGuard1) {
   // Case without keepalive but within ttl
-  int64_t ttl = 3;
+  int64_t ttl = 5;
   int64_t lease_id = client_.get()->LeaseGrant(ttl);
-  const std::string exist_key("/lzw/testing/watch");
+  const std::string exist_key("/lzw/testing/watch1");
   const std::string exist_value("lzw.com");
   bool ret = client_.get()->Set(exist_key, exist_value, lease_id);
   EXPECT_TRUE(ret); 
   std::string get_value = client_.get()->Get(exist_key);
   EXPECT_EQ(exist_value, get_value);
-  client_.get()->WatchGuard(exist_key, exist_value, lease_id);
+  client_.get()->WatchGuard(exist_key, exist_value, ttl);
   ret = client_.get()->Delete(exist_key);
-  std::this_thread::sleep_for(std::chrono::milliseconds(ttl+2));
+  EXPECT_TRUE(ret); 
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   get_value = client_.get()->Get(exist_key);
   EXPECT_TRUE(get_value.length() > 0);
   EXPECT_EQ(exist_value, get_value);
   // Case without keepalive but out of ttl
   std::this_thread::sleep_for(std::chrono::seconds(ttl+2));
   get_value = client_.get()->Get(exist_key);
-  EXPECT_TRUE(get_value.length() == 0);
+  EXPECT_EQ(exist_value, get_value);
+}
+
+TEST_F(ClientTest, WatchGuard2) {
+  int64_t ttl = 5;
+  int64_t lease_id = client_.get()->LeaseGrant(ttl);
+  const std::string exist_key("/lzw/testing/watch2");
+  const std::string exist_value("jd.com");
   // Case with keepalive
   lease_id = client_.get()->LeaseGrant(ttl);
-  ret = client_.get()->Set(exist_key, exist_value, lease_id);
+  bool ret = client_.get()->Set(exist_key, exist_value, lease_id);
   EXPECT_TRUE(ret); 
   client_.get()->KeepAlive(lease_id);
-  client_.get()->WatchGuard(exist_key, exist_value, lease_id);
+  client_.get()->WatchGuard(exist_key, exist_value, ttl);
   ret = client_.get()->Delete(exist_key);
   EXPECT_TRUE(ret); 
-  std::this_thread::sleep_for(std::chrono::milliseconds(ttl+2));
-  get_value = client_.get()->Get(exist_key);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  std::string get_value = client_.get()->Get(exist_key);
   EXPECT_EQ(exist_value, get_value);
   std::this_thread::sleep_for(std::chrono::seconds(ttl+2));
   get_value = client_.get()->Get(exist_key);

@@ -3,6 +3,7 @@
 #ifndef _ETCD_CLIENT_H_
 #define _ETCD_CLIENT_H_
 
+#include <atomic>
 #include <string>
 
 #include <boost/thread.hpp>
@@ -22,6 +23,7 @@ class Client {
      * TODO: etcd cluster support
      */
     Client(const std::string& etcd_addr);
+    virtual ~Client();
 
     /**
      * Set value of a key with specified lease id
@@ -56,6 +58,7 @@ class Client {
     /**
      * KeepAlive maintain health check between client and server with specified lease_id
      * @param lease id to keep alive
+     * Note: limitation: one lease_id only per client i.e. only one active keepalive thread per client
      */
     void KeepAlive(int64_t lease_id);
 
@@ -63,15 +66,17 @@ class Client {
      * WatchGuard keep watch a key and will re-register key with specified value while detected DELETE happen on the key
      * @param the key request to watch and re-register
      * @param the value to be re-registered with the key
-     * @param re-register with the lease id
+     * @param re-register with the ttl
+     * Note: limitation: one key only per client i.e. only one watcher thread per client
      */
-    void WatchGuard(const std::string& key, const std::string& value, int64_t lease_id);
+    void WatchGuard(const std::string& key, const std::string& value, int64_t ttl);
   private:
     std::unique_ptr<KV::Stub> kv_stub_;
     std::unique_ptr<Watch::Stub> watch_stub_;
     std::unique_ptr<Lease::Stub> lease_stub_;
     std::unique_ptr<boost::thread> lease_thread_;
     std::unique_ptr<boost::thread> watch_thread_;
+    std::atomic<int64_t> lease_id_;
 };
 }// namespace etcd
 

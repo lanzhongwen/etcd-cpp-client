@@ -34,7 +34,8 @@ int main() {
     // 3. KeepAlive with lease id
     // 4. WathGuard key/value with lease id
     {
-      int64_t lease_id = client.LeaseGrant(20);
+      int64_t ttl = 10;
+      int64_t lease_id = client.LeaseGrant(10);
       if (lease_id == 0) {
 	std::cerr << "LeaseGrant Failed" << std::endl;
 	return 1;
@@ -49,7 +50,7 @@ int main() {
       }
 
       client.KeepAlive(lease_id);
-      client.WatchGuard(key, value, lease_id);
+      client.WatchGuard(key, value, ttl);
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(60));
