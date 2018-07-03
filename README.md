@@ -41,3 +41,8 @@ $mkdir build
 $cmake ..
 $make
 $make install
+
+How to run example
+1. install etcd first
+2. cd build/src/etcd/example
+3. ./example
