@@ -181,4 +181,22 @@ void Client::WatchGuard(const std::string& key, const std::string& value, int64_
   }));
 }
 
+bool Client::Register(const std::string& key, const std::string& value, int64_t ttl) {
+  int64_t lease_id = LeaseGrant(ttl);
+  if (lease_id == 0) {
+    std::cerr << "LeaseGrant Failed" << std::endl;
+    return false;
+  }
+  bool ret = Set(key, value, lease_id);
+  if (!ret) {
+    std::cerr << "Set Failed" << std::endl;
+    return false;
+  }
+
+  KeepAlive(lease_id);
+  WatchGuard(key, value, ttl);
+
+  return true;
+}
+
 } // namespace etcd

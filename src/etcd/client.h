@@ -70,6 +70,15 @@ class Client {
      * Note: limitation: one key only per client i.e. only one watcher thread per client
      */
     void WatchGuard(const std::string& key, const std::string& value, int64_t ttl);
+
+    /**
+     * Register uniform api for register service with keepalive and watcher
+     * @param key request to register
+     * @param value to be set
+     * @param ttl how long key to live
+     * @return true if success otherwise false
+     */
+    bool Register(const std::string& key, const std::string& value, int64_t ttl);
   private:
     std::unique_ptr<KV::Stub> kv_stub_;
     std::unique_ptr<Watch::Stub> watch_stub_;

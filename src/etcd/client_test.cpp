@@ -116,6 +116,7 @@ TEST_F(ClientTest, WatchGuard1) {
   std::string get_value = client_.get()->Get(exist_key);
   EXPECT_EQ(exist_value, get_value);
   client_.get()->WatchGuard(exist_key, exist_value, ttl);
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   ret = client_.get()->Delete(exist_key);
   EXPECT_TRUE(ret); 
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -139,6 +140,8 @@ TEST_F(ClientTest, WatchGuard2) {
   EXPECT_TRUE(ret); 
   client_.get()->KeepAlive(lease_id);
   client_.get()->WatchGuard(exist_key, exist_value, ttl);
+  // Can't Delete immediately after calling WatchGuard as it may NOT complete operations yet
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   ret = client_.get()->Delete(exist_key);
   EXPECT_TRUE(ret); 
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -147,6 +150,22 @@ TEST_F(ClientTest, WatchGuard2) {
   std::this_thread::sleep_for(std::chrono::seconds(ttl+2));
   get_value = client_.get()->Get(exist_key);
   EXPECT_EQ(exist_value, get_value);
+}
+
+TEST_F(ClientTest, Register) {
+  int64_t ttl = 5;
+  const std::string key("/lzw/testing/register");
+  const std::string value("my.jd.com");
+  bool ret = client_.get()->Register(key, value, ttl);
+  EXPECT_TRUE(ret);
+  ret = client_.get()->Delete(key);
+  EXPECT_TRUE(ret);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  std::string get_value = client_.get()->Get(key);
+  EXPECT_EQ(value, get_value);
+  std::this_thread::sleep_for(std::chrono::seconds(2*ttl));
+  get_value = client_.get()->Get(key);
+  EXPECT_EQ(value, get_value);
 }
 
 } // namespace etcd
