@@ -157,6 +157,7 @@ TEST_F(ClientTest, Register) {
   const std::string key("/lzw/testing/register");
   const std::string value("my.jd.com");
   bool ret = client_.get()->Register(key, value, ttl);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_TRUE(ret);
   ret = client_.get()->Delete(key);
   EXPECT_TRUE(ret);

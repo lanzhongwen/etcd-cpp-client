@@ -27,9 +27,12 @@ enable_testing()
 
 include_directories(/usr/local/include)
 add_executable(runTest src/etcd/client_test.cpp)
+add_executable(runSClientTest src/etcd/concurrentmap_test.cpp src/etcd/sclient_test.cpp)
 
 target_link_libraries(runTest /usr/local/lib/libgtest.a /usr/local/lib/libgtest_main.a boost_system boost_thread pthread etcd-cpp-client)
+target_link_libraries(runSClientTest /usr/local/lib/libgtest.a /usr/local/lib/libgtest_main.a boost_system boost_thread pthread etcd-cpp-client)
 
 add_test(NAME runTest COMMAND runTest)
+add_test(NAME runSClientTest COMMAND runSClientTest)
 
 endif()

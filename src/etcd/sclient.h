@@ -1,7 +1,7 @@
 // Author: Zhongwen Lan(runbus@qq.com)
-// Created: 2018/07/02
-#ifndef _ETCD_CLIENT_H_
-#define _ETCD_CLIENT_H_
+// Created: 2018/07/05
+#ifndef _ETCD_SCLIENT_H_
+#define _ETCD_SCLIENT_H_
 
 #include <atomic>
 #include <string>
@@ -10,20 +10,25 @@
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
 
+#include "etcd/concurrentmap.h"
+#include <gtest/gtest_prod.h>
+
 using etcdserverpb::KV;
 using etcdserverpb::Watch;
 using etcdserverpb::Lease;
 
+using grpc::Channel;
+
 namespace etcd {
-class Client {
+class SClient {
   public:
     /**
-     * Constructor create etcd client with format like "192.168.1.2:2379"
+     * Constructor create etcd safe client with format like "192.168.1.2:2379"
      * @param etcd address include ip address and port
      * TODO: etcd cluster support
      */
-    Client(const std::string& etcd_addr);
-    virtual ~Client();
+    SClient(const std::string& etcd_addr);
+    virtual ~SClient();
 
     /**
      * Set value of a key with specified lease id
@@ -56,37 +61,39 @@ class Client {
     int64_t LeaseGrant(int64_t ttl);
 
     /**
-     * KeepAlive maintain health check between client and server with specified lease_id
-     * @param lease id to keep alive
-     * Note: limitation: one lease_id only per client i.e. only one active keepalive thread per client
+     * SRegister means safe-register which could allow to register multiple keys within a client
+     * @param key request to register
+     * @param value to be set
+     * @param ttl how long key to live
+     * @return true if success otherwise false
      */
-    void KeepAlive(int64_t lease_id);
+    bool SRegister(const std::string& key, const std::string& value, int64_t ttl);
+  protected:
+    /**
+     * KeepAlive keep alive for the key and start with lease_id
+     * @param the key for keepalive
+     * @param lease_id to keep alive
+     * @return return the thread pointer for this key
+     */
+    boost::thread* KeepAlive(const std::string& key, int64_t lease_id);
 
     /**
      * WatchGuard keep watch a key and will re-register key with specified value while detected DELETE happen on the key
      * @param the key request to watch and re-register
      * @param the value to be re-registered with the key
      * @param re-register with the ttl
-     * Note: limitation: one key only per client i.e. only one watcher thread per client
+     * Note: As using sync method, one watcher one thread because the assumption is watcher operations might be low frequency
      */
-    void WatchGuard(const std::string& key, const std::string& value, int64_t ttl);
-
-    /**
-     * Register register supplied key and value and ttl to etcd
-     * @param key request to register
-     * @param value to be set
-     * @param ttl how long key to live
-     * @return true if success otherwise false
-     */
-    bool Register(const std::string& key, const std::string& value, int64_t ttl);
+    boost::thread* WatchGuard(const std::string& key, const std::string& value, int64_t ttl);
   private:
+    // TODO: multiple endpoints share channel and it could automatically switch
+    std::shared_ptr<Channel> channel_;
     std::unique_ptr<KV::Stub> kv_stub_;
-    std::unique_ptr<Watch::Stub> watch_stub_;
-    std::unique_ptr<Lease::Stub> lease_stub_;
-    std::unique_ptr<boost::thread> lease_thread_;
-    std::unique_ptr<boost::thread> watch_thread_;
-    std::atomic<int64_t> lease_id_;
+    //std::unique_ptr<Lease::Stub> lease_stub_;
+    // For multiple keys registration
+    ConCurrentMap map_;
+    FRIEND_TEST(SClientTest, SRegister);
 };
 }// namespace etcd
 
-#endif// _ETCD_CLIENT_H_
+#endif// _ETCD_SCLIENT_H_
