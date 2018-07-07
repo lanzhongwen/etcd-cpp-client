@@ -4,15 +4,17 @@ It's simple etcd cpp client based on gRPC. This client only provides limited ser
 Pre-build:
 1. Install boost
 
-https://www.boost.org/doc/libs/1_67_0/more/getting_started/unix-variants.html
+	https://www.boost.org/doc/libs/1_67_0/more/getting_started/unix-variants.html
 
 2. Install protobuf
-https://github.com/google/protobuf/blob/master/src/README.md
 
-$ git clone https://github.com/google/protobuf.git
-$ cd protobuf
-$ git submodule update --init --recursive
-$ ./autogen.sh
+	https://github.com/google/protobuf/blob/master/src/README.md
+
+	$ git clone https://github.com/google/protobuf.git
+	$ cd protobuf
+	$ git submodule update --init --recursive
+	$ ./autogen.sh
+
 To build and install the C++ Protocol Buffer runtime and the Protocol Buffer compiler (protoc) execute the following:
 
 $ ./configure
