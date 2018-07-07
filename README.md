@@ -11,50 +11,81 @@ Pre-build:
 	https://github.com/google/protobuf/blob/master/src/README.md
 
 	$ git clone https://github.com/google/protobuf.git
+
 	$ cd protobuf
+
 	$ git submodule update --init --recursive
+
 	$ ./autogen.sh
 
 To build and install the C++ Protocol Buffer runtime and the Protocol Buffer compiler (protoc) execute the following:
 
-$ ./configure
-$ make
-$ make check
-$ sudo make install
-$ sudo ldconfig # refresh shared library cache.
+	$ ./configure
+
+	$ make
+
+	$ make check
+	
+	$ sudo make install
+
+	$ sudo ldconfig # refresh shared library cache.
 
 3. Install Protoc for C++
-https://github.com/grpc/grpc/blob/release-0_14/INSTALL.md
 
-$ git clone https://github.com/grpc/grpc.git
-$ cd grpc
-$ git submodule update --init
-$ make
-$ [sudo] make install
+	https://github.com/grpc/grpc/blob/release-0_14/INSTALL.md
+
+	$ git clone https://github.com/grpc/grpc.git
+
+	$ cd grpc
+
+	$ git submodule update --init
+
+	$ make
+
+	$ [sudo] make install
 
 How to build:
-$git clone https://github.com/lanzhongwen/etcd-cpp-client.git
-$cd etcd-cpp-client
-1. compile proto
-$cd proto
-$protoc -I. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
-$protoc -I. --cpp_out=. ./*.proto
+
+	$git clone https://github.com/lanzhongwen/etcd-cpp-client.git
+
+	$cd etcd-cpp-client
+
+	1. compile proto
+
+	$cd proto
+
+	$protoc -I. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./rpc.proto
+
+	$protoc -I. --cpp_out=. ./*.proto
 2. build
-$mkdir build
-$cmake ..
-$make
-$make install
+
+	$mkdir build
+
+	$cmake ..
+
+	$make
+
+	$make install
 
 Prerequisite:
 As it's not enough to time to make mock on etcd, it requires to install etcd before run gtest or example on default port 2379
+
 How to run example
-1. install etcd first
-2. cd build/src/etcd/example
-3. ./example
+
+	1. install etcd first
+
+	2. cd build/src/etcd/example
+
+	3. ./example
 
 How to run gtest
-1. mkdir build
-2. cmake -Dtest=ON ..
-3. make
-4. make test
-5. or: ./runTest
+
+	1. mkdir build
+
+	2. cmake -Dtest=ON ..
+
+	3. make
+
+	4. make test
+
+	5. or: ./runTest or ./runSClientTest ./runTaskTest
