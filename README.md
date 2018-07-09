@@ -55,3 +55,9 @@ How to run gtest
 3. make
 4. make test
 5. or: ./runTest
+6. or: ./runSClientTest
+
+TODO:
+1. To support etcd cluster
+2. Change multiple thread model to IO multiplexing or AIO model
+3. To support more features
