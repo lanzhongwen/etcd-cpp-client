@@ -151,7 +151,6 @@ TEST_F(SClientTest, SRegister) {
 
   // Register same key
   // TODO: It requires to explicit exit or terminate boost::thread otherwise Regsiter same key would cause more than one thread watch one same key. Let do it later.
-  /*
   {
     const std::string key("/lzw/sclient/sregister/3");
     const std::string value("127.0.0.1:18078");
@@ -160,14 +159,16 @@ TEST_F(SClientTest, SRegister) {
     std::string get_value = client_.get()->Get(key);
     EXPECT_EQ(value, get_value);
     client_.get()->SRegister(key, new_value, ttl);
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     get_value = client_.get()->Get(key);
     EXPECT_EQ(new_value, get_value);
     EXPECT_EQ(4, client_.get()->map_.Size());
+    std::cout << "Before Delete(" << key << ")" << std::endl;
     // Delete key
     bool ret = client_.get()->Delete(key);
     EXPECT_TRUE(ret);
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::cout << "After Delete(" << key << ")" << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     get_value = client_.get()->Get(key);
     EXPECT_EQ(new_value, get_value);
     EXPECT_EQ(4, client_.get()->map_.Size());
@@ -178,6 +179,5 @@ TEST_F(SClientTest, SRegister) {
     EXPECT_EQ(new_value, get_value);
     EXPECT_EQ(4, client_.get()->map_.Size());
   }
-  */
 }
 } // namespace etcd

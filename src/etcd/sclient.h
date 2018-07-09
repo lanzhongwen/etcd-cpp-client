@@ -11,6 +11,7 @@
 #include "proto/rpc.grpc.pb.h"
 
 #include "etcd/concurrentmap.h"
+#include "etcd/task.h"
 #include <gtest/gtest_prod.h>
 
 using etcdserverpb::KV;
@@ -73,18 +74,19 @@ class SClient {
      * KeepAlive keep alive for the key and start with lease_id
      * @param the key for keepalive
      * @param lease_id to keep alive
-     * @return return the thread pointer for this key
+     * @return return the task pointer for this key
      */
-    boost::thread* KeepAlive(const std::string& key, int64_t lease_id);
+    Task* KeepAlive(const std::string& key, int64_t lease_id);
 
     /**
      * WatchGuard keep watch a key and will re-register key with specified value while detected DELETE happen on the key
      * @param the key request to watch and re-register
      * @param the value to be re-registered with the key
      * @param re-register with the ttl
+     * @return return the task pointer for this key
      * Note: As using sync method, one watcher one thread because the assumption is watcher operations might be low frequency
      */
-    boost::thread* WatchGuard(const std::string& key, const std::string& value, int64_t ttl);
+    Task* WatchGuard(const std::string& key, const std::string& value, int64_t ttl);
   private:
     // TODO: multiple endpoints share channel and it could automatically switch
     std::shared_ptr<Channel> channel_;

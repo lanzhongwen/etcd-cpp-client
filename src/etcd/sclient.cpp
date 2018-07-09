@@ -50,6 +50,10 @@ bool SClient::Set(const std::string& key, const std::string& value, int64_t leas
   req.set_lease(lease_id);
 
   ClientContext context;
+  unsigned int client_conn_timeout = 5;
+  std::chrono::system_clock::time_point deadline = 
+	  std::chrono::system_clock::now() + std::chrono::seconds(client_conn_timeout);
+  context.set_deadline(deadline);
   Status status = kv_stub_.get()->Put(&context, req, &resp);
 
   if (status.ok()) {
@@ -68,6 +72,10 @@ bool SClient::Delete(const std::string& key) {
   // No need prev_key in current interface
   // req.set_prev_kv(true);
   ClientContext context;
+  unsigned int client_conn_timeout = 5;
+  std::chrono::system_clock::time_point deadline = 
+	  std::chrono::system_clock::now() + std::chrono::seconds(client_conn_timeout);
+  context.set_deadline(deadline);
   Status status = kv_stub_.get()->DeleteRange(&context, req, &resp);
 
   return status.ok();
@@ -78,7 +86,12 @@ std::string SClient::Get(const std::string& key) {
   RangeResponse resp;
   req.set_key(key);
   ClientContext context;
-  Status status = kv_stub_.get()->Range(&context, req, &resp);
+  unsigned int client_conn_timeout = 5;
+  std::chrono::system_clock::time_point deadline = 
+	  std::chrono::system_clock::now() + std::chrono::seconds(client_conn_timeout);
+  context.set_deadline(deadline);
+  std::unique_ptr<KV::Stub> kv_stub = KV::NewStub(channel_);
+  Status status = kv_stub.get()->Range(&context, req, &resp);
   if (!status.ok()) {
     return std::string("");
   }
@@ -97,6 +110,10 @@ int64_t SClient::LeaseGrant(int64_t ttl) {
   req.set_id(0);
 
   ClientContext context;
+  unsigned int client_conn_timeout = 5;
+  std::chrono::system_clock::time_point deadline = 
+	  std::chrono::system_clock::now() + std::chrono::seconds(client_conn_timeout);
+  context.set_deadline(deadline);
   std::unique_ptr<Lease::Stub> lease_stub = Lease::NewStub(channel_);
   Status status = lease_stub.get()->LeaseGrant(&context, req, &resp);
   if (status.ok()) {
@@ -106,8 +123,9 @@ int64_t SClient::LeaseGrant(int64_t ttl) {
   return 0;
 }
 
-boost::thread* SClient::KeepAlive(const std::string& key, int64_t lease_id) {
-  boost::thread* lease_thread = new boost::thread([=]() {
+Task* SClient::KeepAlive(const std::string& key, int64_t lease_id) {
+  Task* task = new Task();
+  task->Start([=]() {
     LeaseKeepAliveRequest req;
     LeaseKeepAliveResponse resp;
     ClientContext context;
@@ -115,7 +133,7 @@ boost::thread* SClient::KeepAlive(const std::string& key, int64_t lease_id) {
     std::unique_ptr<Lease::Stub> lease_stub = Lease::NewStub(channel_);
     std::unique_ptr<ClientReaderWriter<LeaseKeepAliveRequest,LeaseKeepAliveResponse>> stream = lease_stub.get()->LeaseKeepAlive(&context);
     stream->Write(req);
-    while (1) {
+    while (task->IsStop() == false) {
       if (stream->Read(&resp)) {
         int64_t ttl = resp.ttl();
 	if (ttl == 0) {
@@ -137,14 +155,19 @@ boost::thread* SClient::KeepAlive(const std::string& key, int64_t lease_id) {
 	break;
       }
     }
-    std::cout << "Exiting KeepAlive..." << std::endl;
+    Status status = stream->Finish();
+    if (!status.ok()) {
+      std::cerr << "stream->Finish() rpc failed" << std::endl;
+    }
+    std::cout << "Exiting KeepAlive...: thread id: " << std::this_thread::get_id() << std::endl;
   });
 
-  return lease_thread;
+  return task;
 }
 
-boost::thread* SClient::WatchGuard(const std::string& key, const std::string& value, int64_t ttl) {
-  boost::thread* watch_thread = new boost::thread([=](){
+Task* SClient::WatchGuard(const std::string& key, const std::string& value, int64_t ttl) {
+  Task* task = new Task();
+  task->Start([=](){
     ClientContext context;
     std::unique_ptr<Watch::Stub> watch_stub = Watch::NewStub(channel_);
     std::unique_ptr<ClientReaderWriter<WatchRequest,WatchResponse>> stream = watch_stub.get()->Watch(&context);
@@ -155,12 +178,17 @@ boost::thread* SClient::WatchGuard(const std::string& key, const std::string& va
     create_req.set_prev_kv(false);
     req.mutable_create_request()->CopyFrom(create_req);
     stream->Write(req);
-    while (1) {
+    while (task->IsStop() == false) {
       if (stream->Read(&resp)) {
         for (const auto &ev: resp.events()) {
 	  std::cout << "WatchGuard: Read Event: " << ev.type() << std::endl;
 	  if (ev.type() == ::mvccpb::Event::DELETE) {
 	    std::cout << "Caught: DELETE by " << std::this_thread::get_id() << std::endl;
+	    if (task->IsStop()) {
+	      std::cout << "Stop set already: Exiting...: thread id: " 
+	      << std::this_thread::get_id() << std::endl;
+	      break;
+	    }
 	    // When DELETE found, re-register
 	    int64_t lease_id(0);
 	    while (((lease_id = LeaseGrant(ttl)) == 0)) {
@@ -186,8 +214,13 @@ boost::thread* SClient::WatchGuard(const std::string& key, const std::string& va
 	break;
       }
     }
+    Status status = stream->Finish();
+    if (!status.ok()) {
+      std::cerr << "stream->Finish() rpc failed" << std::endl;
+    }
+    std::cout << "Exiting WatchGuard...: thread id: " << std::this_thread::get_id() << std::endl;
   });
-  return watch_thread;
+  return task;
 }
 
 bool SClient::SRegister(const std::string& key, const std::string& value, int64_t ttl) {
@@ -202,10 +235,10 @@ bool SClient::SRegister(const std::string& key, const std::string& value, int64_
     return false;
   }
 
-  boost::thread* lease_thread = KeepAlive(key, lease_id);
-  boost::thread* watch_thread = WatchGuard(key, value, ttl);
+  Task* lease_task = KeepAlive(key, lease_id);
+  Task* watch_task = WatchGuard(key, value, ttl);
 
-  map_.Insert(key, lease_thread, watch_thread, lease_id);
+  map_.Insert(key, lease_task, watch_task, lease_id);
 
   return true;
 }
