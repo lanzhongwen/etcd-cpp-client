@@ -19,6 +19,7 @@ using etcdserverpb::Watch;
 using etcdserverpb::Lease;
 
 using grpc::Channel;
+using grpc::ClientContext;
 
 namespace etcd {
 class SClient {
@@ -69,6 +70,12 @@ class SClient {
      * @return true if success otherwise false
      */
     bool SRegister(const std::string& key, const std::string& value, int64_t ttl);
+    /**
+     * SetDeadline set timeout value in seconds for context
+     * @param context to be set
+     * @param timeout_seconds timeout value in seconds
+     */
+    void SetDeadline(ClientContext& context, uint32_t timeout_seconds);
   protected:
     /**
      * KeepAlive keep alive for the key and start with lease_id

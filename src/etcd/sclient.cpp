@@ -29,6 +29,9 @@ using etcdserverpb::WatchCreateRequest;
 
 using mvccpb::KeyValue;
 
+// TODO: configurable
+const uint32_t client_conn_timeout = 5;
+
 namespace etcd {
 SClient::SClient(const std::string & etcd_addr) {
   channel_ = grpc::CreateChannel(etcd_addr, grpc::InsecureChannelCredentials()); 
@@ -50,10 +53,7 @@ bool SClient::Set(const std::string& key, const std::string& value, int64_t leas
   req.set_lease(lease_id);
 
   ClientContext context;
-  unsigned int client_conn_timeout = 5;
-  std::chrono::system_clock::time_point deadline = 
-	  std::chrono::system_clock::now() + std::chrono::seconds(client_conn_timeout);
-  context.set_deadline(deadline);
+  SetDeadline(context, client_conn_timeout);
   Status status = kv_stub_.get()->Put(&context, req, &resp);
 
   if (status.ok()) {
@@ -72,10 +72,7 @@ bool SClient::Delete(const std::string& key) {
   // No need prev_key in current interface
   // req.set_prev_kv(true);
   ClientContext context;
-  unsigned int client_conn_timeout = 5;
-  std::chrono::system_clock::time_point deadline = 
-	  std::chrono::system_clock::now() + std::chrono::seconds(client_conn_timeout);
-  context.set_deadline(deadline);
+  SetDeadline(context, client_conn_timeout);
   Status status = kv_stub_.get()->DeleteRange(&context, req, &resp);
 
   return status.ok();
@@ -86,10 +83,7 @@ std::string SClient::Get(const std::string& key) {
   RangeResponse resp;
   req.set_key(key);
   ClientContext context;
-  unsigned int client_conn_timeout = 5;
-  std::chrono::system_clock::time_point deadline = 
-	  std::chrono::system_clock::now() + std::chrono::seconds(client_conn_timeout);
-  context.set_deadline(deadline);
+  SetDeadline(context, client_conn_timeout);
   std::unique_ptr<KV::Stub> kv_stub = KV::NewStub(channel_);
   Status status = kv_stub.get()->Range(&context, req, &resp);
   if (!status.ok()) {
@@ -110,10 +104,7 @@ int64_t SClient::LeaseGrant(int64_t ttl) {
   req.set_id(0);
 
   ClientContext context;
-  unsigned int client_conn_timeout = 5;
-  std::chrono::system_clock::time_point deadline = 
-	  std::chrono::system_clock::now() + std::chrono::seconds(client_conn_timeout);
-  context.set_deadline(deadline);
+  SetDeadline(context, client_conn_timeout);
   std::unique_ptr<Lease::Stub> lease_stub = Lease::NewStub(channel_);
   Status status = lease_stub.get()->LeaseGrant(&context, req, &resp);
   if (status.ok()) {
@@ -241,6 +232,12 @@ bool SClient::SRegister(const std::string& key, const std::string& value, int64_
   map_.Insert(key, lease_task, watch_task, lease_id);
 
   return true;
+}
+
+void SClient::SetDeadline(ClientContext& context, uint32_t timeout_seconds) {
+  std::chrono::system_clock::time_point deadline = 
+	  std::chrono::system_clock::now() + std::chrono::seconds(timeout_seconds);
+  context.set_deadline(deadline);
 }
 
 } // namespace etcd

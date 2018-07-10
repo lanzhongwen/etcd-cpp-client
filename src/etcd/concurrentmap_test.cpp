@@ -21,10 +21,10 @@ TEST_F(ConCurrentMapTest, Insert) {
   {
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180705;
-    boost::thread* lease_thread = new boost::thread;
-    boost::thread* watch_thread = new boost::thread;
+    Task* lease_task = new Task;
+    Task* watch_task = new Task;
     ASSERT_TRUE(test_map_.Size() == 0);
-    test_map_.Insert(key, lease_thread, watch_thread, lease_id);
+    test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(1, test_map_.Size());
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
   }
@@ -32,9 +32,9 @@ TEST_F(ConCurrentMapTest, Insert) {
   {
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180706;
-    boost::thread* lease_thread = new boost::thread;
-    boost::thread* watch_thread = new boost::thread;
-    test_map_.Insert(key, lease_thread, watch_thread, lease_id);
+    Task* lease_task = new Task;
+    Task* watch_task = new Task;
+    test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(1, test_map_.Size());
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
   }
@@ -43,9 +43,9 @@ TEST_F(ConCurrentMapTest, Insert) {
   {
     std::string key = "/lzw/insert/1";
     int64_t lease_id = 20180707;
-    boost::thread* lease_thread = new boost::thread;
-    boost::thread* watch_thread = new boost::thread;
-    test_map_.Insert(key, lease_thread, watch_thread, lease_id);
+    Task* lease_task = new Task;
+    Task* watch_task = new Task;
+    test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(2, test_map_.Size());
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
   }
@@ -57,9 +57,9 @@ TEST_F(ConCurrentMapTest, GetLeaseId) {
     ASSERT_TRUE(test_map_.Size() == 0);
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180705;
-    boost::thread* lease_thread = new boost::thread;
-    boost::thread* watch_thread = new boost::thread;
-    test_map_.Insert(key, lease_thread, watch_thread, lease_id);
+    Task* lease_task = new Task;
+    Task* watch_task = new Task;
+    test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
   }
   // Get nonexisting key
@@ -74,9 +74,9 @@ TEST_F(ConCurrentMapTest, Set) {
   {
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180705;
-    boost::thread* lease_thread = new boost::thread;
-    boost::thread* watch_thread = new boost::thread;
-    test_map_.Insert(key, lease_thread, watch_thread, lease_id);
+    Task* lease_task = new Task;
+    Task* watch_task = new Task;
+    test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
     int64_t new_id = 20180706;
     bool ret = test_map_.Set(key, new_id); 
@@ -97,9 +97,9 @@ TEST_F(ConCurrentMapTest, Delete) {
   {
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180705;
-    boost::thread* lease_thread = new boost::thread;
-    boost::thread* watch_thread = new boost::thread;
-    test_map_.Insert(key, lease_thread, watch_thread, lease_id);
+    Task* lease_task = new Task;
+    Task* watch_task = new Task;
+    test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
     EXPECT_EQ(1, test_map_.Size());
     std::string wrong_key = "/lzw/insert/1";
