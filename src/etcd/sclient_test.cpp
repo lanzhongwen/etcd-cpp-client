@@ -158,9 +158,13 @@ TEST_F(SClientTest, SRegister) {
     int64_t ttl = 3;
     std::string get_value = client_.get()->Get(key);
     EXPECT_EQ(value, get_value);
+    std::cout << "Before SRegister" << std::endl;
     client_.get()->SRegister(key, new_value, ttl);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::cout << "After SRegister" << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    std::cout << "Before Get" << std::endl;
     get_value = client_.get()->Get(key);
+    std::cout << "After Get" << std::endl;
     EXPECT_EQ(new_value, get_value);
     EXPECT_EQ(4, client_.get()->map_.Size());
     std::cout << "Before Delete(" << key << ")" << std::endl;
@@ -168,7 +172,7 @@ TEST_F(SClientTest, SRegister) {
     bool ret = client_.get()->Delete(key);
     EXPECT_TRUE(ret);
     std::cout << "After Delete(" << key << ")" << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     get_value = client_.get()->Get(key);
     EXPECT_EQ(new_value, get_value);
     EXPECT_EQ(4, client_.get()->map_.Size());

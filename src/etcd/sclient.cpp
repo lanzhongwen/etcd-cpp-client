@@ -30,7 +30,7 @@ using etcdserverpb::WatchCreateRequest;
 using mvccpb::KeyValue;
 
 // TODO: configurable
-const uint32_t client_conn_timeout = 5;
+const uint32_t client_conn_timeout = 3;
 
 namespace etcd {
 SClient::SClient(const std::string & etcd_addr) {
@@ -84,8 +84,8 @@ std::string SClient::Get(const std::string& key) {
   req.set_key(key);
   ClientContext context;
   SetDeadline(context, client_conn_timeout);
-  std::unique_ptr<KV::Stub> kv_stub = KV::NewStub(channel_);
-  Status status = kv_stub.get()->Range(&context, req, &resp);
+  //std::unique_ptr<KV::Stub> kv_stub = KV::NewStub(channel_);
+  Status status = kv_stub_.get()->Range(&context, req, &resp);
   if (!status.ok()) {
     return std::string("");
   }
@@ -123,6 +123,7 @@ Task* SClient::KeepAlive(const std::string& key, int64_t lease_id) {
     req.set_id(lease_id);
     std::unique_ptr<Lease::Stub> lease_stub = Lease::NewStub(channel_);
     std::unique_ptr<ClientReaderWriter<LeaseKeepAliveRequest,LeaseKeepAliveResponse>> stream = lease_stub.get()->LeaseKeepAlive(&context);
+    task->SetKeepStream(stream.get());
     stream->Write(req);
     while (task->IsStop() == false) {
       if (stream->Read(&resp)) {
@@ -146,10 +147,6 @@ Task* SClient::KeepAlive(const std::string& key, int64_t lease_id) {
 	break;
       }
     }
-    Status status = stream->Finish();
-    if (!status.ok()) {
-      std::cerr << "stream->Finish() rpc failed" << std::endl;
-    }
     std::cout << "Exiting KeepAlive...: thread id: " << std::this_thread::get_id() << std::endl;
   });
 
@@ -162,6 +159,7 @@ Task* SClient::WatchGuard(const std::string& key, const std::string& value, int6
     ClientContext context;
     std::unique_ptr<Watch::Stub> watch_stub = Watch::NewStub(channel_);
     std::unique_ptr<ClientReaderWriter<WatchRequest,WatchResponse>> stream = watch_stub.get()->Watch(&context);
+    task->SetWatchStream(stream.get());
     WatchRequest req;
     WatchResponse resp;
     WatchCreateRequest create_req;
@@ -204,10 +202,6 @@ Task* SClient::WatchGuard(const std::string& key, const std::string& value, int6
 	std::cerr << "WatchGuard: Read failed" << std::endl;
 	break;
       }
-    }
-    Status status = stream->Finish();
-    if (!status.ok()) {
-      std::cerr << "stream->Finish() rpc failed" << std::endl;
     }
     std::cout << "Exiting WatchGuard...: thread id: " << std::this_thread::get_id() << std::endl;
   });
