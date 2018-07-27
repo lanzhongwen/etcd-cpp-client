@@ -6,7 +6,7 @@
 #include <atomic>
 #include <string>
 
-#include <boost/thread.hpp>
+#include <thread>
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
 
@@ -83,8 +83,8 @@ class Client {
     std::unique_ptr<KV::Stub> kv_stub_;
     std::unique_ptr<Watch::Stub> watch_stub_;
     std::unique_ptr<Lease::Stub> lease_stub_;
-    std::unique_ptr<boost::thread> lease_thread_;
-    std::unique_ptr<boost::thread> watch_thread_;
+    std::unique_ptr<std::thread> lease_thread_;
+    std::unique_ptr<std::thread> watch_thread_;
     std::atomic<int64_t> lease_id_;
 };
 }// namespace etcd

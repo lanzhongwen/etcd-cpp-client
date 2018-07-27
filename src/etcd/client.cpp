@@ -4,7 +4,6 @@
 
 #include <chrono>
 #include <memory>
-#include <thread>
 #include <utility>
 
 
@@ -109,7 +108,7 @@ int64_t Client::LeaseGrant(int64_t ttl) {
 }
 
 void Client::KeepAlive(int64_t lease_id) {
-  lease_thread_.reset(new boost::thread([=]() {
+  lease_thread_.reset(new std::thread([=]() {
     LeaseKeepAliveRequest req;
     LeaseKeepAliveResponse resp;
     ClientContext context;
@@ -140,7 +139,7 @@ void Client::KeepAlive(int64_t lease_id) {
 }
 
 void Client::WatchGuard(const std::string& key, const std::string& value, int64_t ttl) {
-  watch_thread_.reset(new boost::thread([=](){
+  watch_thread_.reset(new std::thread([=](){
     ClientContext context;
     std::unique_ptr<ClientReaderWriter<WatchRequest,WatchResponse>> stream = watch_stub_.get()->Watch(&context);
     WatchRequest req;

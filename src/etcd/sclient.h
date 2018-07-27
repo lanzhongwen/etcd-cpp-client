@@ -6,7 +6,6 @@
 #include <atomic>
 #include <string>
 
-#include <boost/thread.hpp>
 #include <grpc++/grpc++.h>
 #include "proto/rpc.grpc.pb.h"
 
