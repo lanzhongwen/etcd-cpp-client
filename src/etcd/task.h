@@ -30,28 +30,22 @@ public:
   }
   ~Task()
   {
-    std::cout << "Start of ~Task()" << std::endl;
     if (thread_ != nullptr && thread_->joinable())
     {
-      pthread_t tid = thread_->native_handle();
-      std::cout << "Stop: tid: " << tid << std::endl;
       Stop();
       //pthread_kill(tid, SIGTERM);
 
-      std::cout << "Before join()" << std::endl;
       thread_->join();
-      std::cout << "To delete thread_" << std::endl;
       delete thread_;
       thread_ = nullptr;
     }
     keep_stream_ = nullptr;
     watch_stream_ = nullptr;
-    std::cout << "End of ~Task()" << std::endl;
   }
 
   void Start(const std::function<void()> &fn)
   {
-    signal(SIGTERM, OnSignalTerm);
+    //signal(SIGTERM, OnSignalTerm);
     thread_ = new boost::thread(fn);
   }
 
@@ -67,17 +61,12 @@ public:
       stoppable_.store(true);
       if (keep_stream_ != nullptr)
       {
-        std::cout << "Calling keep stream::WritesDone()" << std::endl;
         keep_stream_->WritesDone();
       }
       if (watch_stream_ != nullptr)
       {
-        std::cout << "Calling watch stream::WritesDone()" << std::endl;
         watch_stream_->WritesDone();
       }
-      std::cout << "task this address: " << (int64_t)this << std::endl;
-      std::cout << "Task::Stoppable: " << stoppable_ << std::endl;
-      std::cout << "Task::Stoppable address: " << (int64_t)&stoppable_ << std::endl;
     }
   }
 

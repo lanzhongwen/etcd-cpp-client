@@ -29,7 +29,7 @@ using etcdserverpb::WatchResponse;
 using mvccpb::KeyValue;
 
 // TODO: configurable
-const uint32_t client_conn_timeout = 3;
+const uint32_t client_conn_timeout = 5;
 
 namespace etcd
 {
@@ -37,7 +37,6 @@ SClient::SClient(const std::string &etcd_addr)
 {
   channel_ = grpc::CreateChannel(etcd_addr, grpc::InsecureChannelCredentials());
   kv_stub_ = KV::NewStub(channel_);
-  //lease_stub_ = Lease::NewStub(channel_);
 }
 
 SClient::~SClient()
@@ -91,7 +90,6 @@ std::string SClient::Get(const std::string &key)
   req.set_key(key);
   ClientContext context;
   SetDeadline(context, client_conn_timeout);
-  //std::unique_ptr<KV::Stub> kv_stub = KV::NewStub(channel_);
   Status status = kv_stub_->Range(&context, req, &resp);
   if (!status.ok())
   {
@@ -130,7 +128,6 @@ Task *SClient::KeepAlive(const std::string &key, int64_t lease_id)
 {
   Task *task = new Task();
   task->Start([=]() {
-    std::cout << "KeepAlive tid: " << std::this_thread::get_id() << std::endl;
     LeaseKeepAliveRequest req;
     LeaseKeepAliveResponse resp;
     ClientContext context;
@@ -143,9 +140,6 @@ Task *SClient::KeepAlive(const std::string &key, int64_t lease_id)
     {
       if (stream->Read(&resp))
       {
-        std::cout << "KeepAlive task address: " << (int64_t)task << std::endl;
-        std::cout << "KeepAlive tid: " << std::this_thread::get_id() << std::endl;
-        std::cout << "KeepAlive Stoppable: " << task->IsStop() << std::endl;
         int64_t ttl = resp.ttl();
         if (ttl == 0)
         {
@@ -153,7 +147,6 @@ Task *SClient::KeepAlive(const std::string &key, int64_t lease_id)
           std::cout << "Warning: KeepAlive TTL: " << ttl << std::endl;
           break;
         }
-        std::cout << "KeepAlive New TTL: " << ttl << std::endl;
         // Note: ttl is in seconds
         std::this_thread::sleep_for(std::chrono::milliseconds(ttl * 1000 / 2));
         if (task->IsStop()) {
@@ -185,7 +178,6 @@ Task *SClient::WatchGuard(const std::string &key, const std::string &value, int6
 {
   Task *task = new Task();
   task->Start([=]() {
-    std::cout << "WatchGuard tid: " << std::this_thread::get_id() << std::endl;
     ClientContext context;
     std::unique_ptr<Watch::Stub> watch_stub = Watch::NewStub(channel_);
     std::unique_ptr<ClientReaderWriter<WatchRequest, WatchResponse>> stream = watch_stub->Watch(&context);
@@ -199,8 +191,6 @@ Task *SClient::WatchGuard(const std::string &key, const std::string &value, int6
     stream->Write(req);
     while (task->IsStop() == false)
     {
-      std::cout << "WatchGuard task address: " << (int64_t)task << std::endl;
-      std::cout << "WatchGuard Stoppable: " << task->IsStop() << std::endl;
       if (stream->Read(&resp))
       {
         for (const auto &ev : resp.events())

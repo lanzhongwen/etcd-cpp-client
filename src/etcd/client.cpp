@@ -178,7 +178,6 @@ void Client::WatchGuard(const std::string &key, const std::string &value, int64_
     {
       if (stream->Read(&resp))
       {
-        std::cout << "watch_task:Read()" << std::endl;
         for (const auto &ev : resp.events())
         {
           std::cout << "WatchGuard: Read Event: " << ev.type() << std::endl;
@@ -214,6 +213,7 @@ void Client::WatchGuard(const std::string &key, const std::string &value, int64_
         break;
       }
     }
+    std::cout << "Exiting WatchGuard...: thread id: " << std::this_thread::get_id() << std::endl;
   });
 }
 
