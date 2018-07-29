@@ -3,26 +3,32 @@
 #include "gtest/gtest.h"
 #include "etcd/concurrentmap.h"
 
-namespace etcd {
-class ConCurrentMapTest : public testing::Test {
-  protected:
-    ConCurrentMapTest() {
-    }
+namespace etcd
+{
+class ConCurrentMapTest : public testing::Test
+{
+protected:
+  ConCurrentMapTest()
+  {
+  }
 
-    void SetUp() {
-    }
-    void TearDown() {
-    }
-    ConCurrentMap test_map_;
+  void SetUp()
+  {
+  }
+  void TearDown()
+  {
+  }
+  ConCurrentMap test_map_;
 };
 
-TEST_F(ConCurrentMapTest, Insert) {
+TEST_F(ConCurrentMapTest, Insert)
+{
   // Insert record into empty map
   {
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180705;
-    Task* lease_task = new Task;
-    Task* watch_task = new Task;
+    Task *lease_task = new Task;
+    Task *watch_task = new Task;
     ASSERT_TRUE(test_map_.Size() == 0);
     test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(1, test_map_.Size());
@@ -32,8 +38,8 @@ TEST_F(ConCurrentMapTest, Insert) {
   {
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180706;
-    Task* lease_task = new Task;
-    Task* watch_task = new Task;
+    Task *lease_task = new Task;
+    Task *watch_task = new Task;
     test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(1, test_map_.Size());
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
@@ -43,22 +49,23 @@ TEST_F(ConCurrentMapTest, Insert) {
   {
     std::string key = "/lzw/insert/1";
     int64_t lease_id = 20180707;
-    Task* lease_task = new Task;
-    Task* watch_task = new Task;
+    Task *lease_task = new Task;
+    Task *watch_task = new Task;
     test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(2, test_map_.Size());
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
   }
 }
 
-TEST_F(ConCurrentMapTest, GetLeaseId) {
+TEST_F(ConCurrentMapTest, GetLeaseId)
+{
   // Get existing key
   {
     ASSERT_TRUE(test_map_.Size() == 0);
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180705;
-    Task* lease_task = new Task;
-    Task* watch_task = new Task;
+    Task *lease_task = new Task;
+    Task *watch_task = new Task;
     test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
   }
@@ -69,36 +76,38 @@ TEST_F(ConCurrentMapTest, GetLeaseId) {
   }
 }
 
-TEST_F(ConCurrentMapTest, Set) {
+TEST_F(ConCurrentMapTest, Set)
+{
   // Insert first and set existing key
   {
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180705;
-    Task* lease_task = new Task;
-    Task* watch_task = new Task;
+    Task *lease_task = new Task;
+    Task *watch_task = new Task;
     test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
     int64_t new_id = 20180706;
-    bool ret = test_map_.Set(key, new_id); 
+    bool ret = test_map_.Set(key, new_id);
     EXPECT_TRUE(ret);
     EXPECT_EQ(new_id, test_map_.GetLeaseId(key));
   }
-  
+
   {
     std::string key = "non-existing";
     int64_t new_id = 20180706;
-    bool ret = test_map_.Set(key, new_id); 
+    bool ret = test_map_.Set(key, new_id);
     EXPECT_FALSE(ret);
   }
 }
 
-TEST_F(ConCurrentMapTest, Delete) {
+TEST_F(ConCurrentMapTest, Delete)
+{
   // Insert first and delete existing key
   {
     std::string key = "/lzw/insert";
     int64_t lease_id = 20180705;
-    Task* lease_task = new Task;
-    Task* watch_task = new Task;
+    Task *lease_task = new Task;
+    Task *watch_task = new Task;
     test_map_.Insert(key, lease_task, watch_task, lease_id);
     EXPECT_EQ(lease_id, test_map_.GetLeaseId(key));
     EXPECT_EQ(1, test_map_.Size());

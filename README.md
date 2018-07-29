@@ -72,7 +72,7 @@ As it's not enough to time to make mock on etcd, it requires to install etcd bef
 
 How to run example
 
-	1. install etcd first
+	1. install etcd first: ./etcd.install.sh
 
 	2. cd build/src/etcd/example
 
